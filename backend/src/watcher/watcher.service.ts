@@ -2,10 +2,13 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { OcrService } from '../../ocr/ocr.service';
 
 @Injectable()
 export class WatcherService implements OnModuleInit {
   private lastScanTime = Date.now();
+
+  constructor(private readonly ocrService: OcrService) {}
 
   onModuleInit() {
     console.log('🚀 Watcher Service Initialized');
@@ -13,14 +16,20 @@ export class WatcherService implements OnModuleInit {
     this.startPolling(folder);
   }
 
+  /**
+   * Detect screenshot folder (macOS)
+   */
   private getScreenshotFolder(): string {
     return path.join(os.homedir(), 'Desktop');
   }
 
+  /**
+   * Poll folder every second to detect new screenshots
+   */
   private startPolling(folder: string) {
     console.log('👀 Polling folder:', folder);
 
-    setInterval(() => {
+    setInterval(async () => {
       try {
         const files = fs.readdirSync(folder);
 
@@ -28,9 +37,16 @@ export class WatcherService implements OnModuleInit {
           const fullPath = path.join(folder, file);
           const stats = fs.statSync(fullPath);
 
+          // Only process NEW files
           if (stats.birthtimeMs > this.lastScanTime) {
             if (this.isScreenshot(file)) {
-              console.log(' Screenshot detected:', fullPath);
+              console.log('📸 Screenshot detected:', fullPath);
+
+              // OCR PROCESS
+              const extractedText =
+                await this.ocrService.extractText(fullPath);
+
+              console.log('🧠 Extracted Text:\n', extractedText);
             }
           }
         }
@@ -46,6 +62,9 @@ export class WatcherService implements OnModuleInit {
     }, 1000);
   }
 
+  /**
+   * Check if file is a screenshot
+   */
   private isScreenshot(fileName: string): boolean {
     const name = fileName.toLowerCase();
 
@@ -59,4 +78,3 @@ export class WatcherService implements OnModuleInit {
     );
   }
 }
-
