@@ -1,70 +1,108 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { OcrService } from '../../ocr/ocr.service';
+import { OcrService } from '../ocr/ocr.service';
+import { ClassifierService } from '../classifier/classifier.service';
+import { AiService } from '../ai/ai.service';
+import { OrganizerService } from '../organizer/organizer.service';
 
 @Injectable()
 export class WatcherService implements OnModuleInit {
   private lastScanTime = Date.now();
+  private processing = new Set<string>();
 
-  constructor(private readonly ocrService: OcrService) {}
+  constructor(
+    private readonly ocrService: OcrService,
+    private readonly classifierService: ClassifierService,
+    private readonly aiService: AiService,
+    private readonly organizerService: OrganizerService
+  ) {}
 
   onModuleInit() {
     console.log('🚀 Watcher Service Initialized');
-    const folder = this.getScreenshotFolder();
-    this.startPolling(folder);
+    this.startPolling(this.getScreenshotFolder());
   }
 
-  /**
-   * Detect screenshot folder (macOS)
-   */
   private getScreenshotFolder(): string {
     return path.join(os.homedir(), 'Desktop');
   }
 
-  /**
-   * Poll folder every second to detect new screenshots
-   */
   private startPolling(folder: string) {
     console.log('👀 Polling folder:', folder);
 
     setInterval(async () => {
       try {
-        const files = fs.readdirSync(folder);
+        const files = await fs.readdir(folder);
 
         for (const file of files) {
           const fullPath = path.join(folder, file);
-          const stats = fs.statSync(fullPath);
 
-          // Only process NEW files
-          if (stats.birthtimeMs > this.lastScanTime) {
-            if (this.isScreenshot(file)) {
-              console.log('📸 Screenshot detected:', fullPath);
+          // Skip already processing files
+          if (this.processing.has(fullPath)) continue;
 
-              // OCR PROCESS
-              const extractedText =
-                await this.ocrService.extractText(fullPath);
+          const stats = await fs.stat(fullPath);
 
-              console.log('🧠 Extracted Text:\n', extractedText);
-            }
+          if (
+            stats.birthtimeMs > this.lastScanTime &&
+            this.isScreenshot(file)
+          ) {
+            this.processing.add(fullPath);
+
+            await this.handleScreenshot(fullPath);
+
+            this.processing.delete(fullPath);
           }
         }
 
         this.lastScanTime = Date.now();
       } catch (error) {
-        if (error instanceof Error) {
-          console.error('❌ Error scanning folder:', error.message);
-        } else {
-          console.error('❌ Unknown error occurred');
-        }
+        console.error(
+          '❌ Watcher error:',
+          error instanceof Error ? error.message : error
+        );
       }
     }, 1000);
   }
 
-  /**
-   * Check if file is a screenshot
-   */
+  private async handleScreenshot(fullPath: string) {
+    try {
+      console.log('\n📸 Screenshot detected:', fullPath);
+
+      // 1️⃣ OCR
+      const extractedText =
+        await this.ocrService.extractText(fullPath);
+
+      console.log('🧠 OCR Text:', extractedText);
+
+      // 2️⃣ Rule-based classification
+      const ruleCategory =
+        this.classifierService.classify(extractedText);
+
+      console.log('📂 Rule-based:', ruleCategory);
+
+      // 3️⃣ AI classification
+      const aiCategory =
+        await this.aiService.classify(extractedText);
+
+      console.log('🤖 AI category:', aiCategory);
+
+      // 4️⃣ Move & rename
+      const newPath = this.organizerService.organize(
+        fullPath,
+        aiCategory,
+        extractedText
+      );
+
+      console.log('📁 Saved to:', newPath);
+    } catch (error) {
+      console.error(
+        '❌ Processing failed:',
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
+
   private isScreenshot(fileName: string): boolean {
     const name = fileName.toLowerCase();
 
