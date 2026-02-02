@@ -6,6 +6,8 @@ import { OcrModule } from './ocr/ocr.module';
 import { ClassifierModule } from './classifier/classifier.module';
 import { AiModule } from './ai/ai.module';
 import { OrganizerModule } from './organizer/organizer.module';
+import { HistoryModule } from './history/history.module';
+import { DecisionModule } from './decision/decision.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { OrganizerModule } from './organizer/organizer.module';
     ClassifierModule,
     AiModule,
     OrganizerModule,
+    HistoryModule,
+    DecisionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

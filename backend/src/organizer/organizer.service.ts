@@ -16,31 +16,47 @@ export class OrganizerService {
 
   organize(
     originalPath: string,
-    category: string,
-    extractedText: string
-  ): string {
-    const folderName =
-      this.categoryMap[category] || 'Others';
-
-    const folderPath = path.join(this.baseDir, folderName);
-
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
-    }
-
-    const cleanName = this.generateCleanName(
-      category,
-      extractedText
+    category: string
+  ): { newPath: string; originalPath: string } {
+    const folderMap: Record<string, string> = {
+      code: 'Code',
+      error: 'Errors',
+      chat: 'Chat',
+      ui: 'UI',
+      document: 'Documents',
+      unknown: 'Others',
+    };
+  
+    const folder =
+      folderMap[category] || 'Others';
+  
+    const baseDir = path.join(
+      os.homedir(),
+      'Desktop',
+      'Screenshots',
+      folder
     );
-
+  
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir, { recursive: true });
+    }
+  
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/:/g, '-');
+  
     const ext = path.extname(originalPath);
-    const newFileName = `${cleanName}${ext}`;
-    const newPath = path.join(folderPath, newFileName);
-
+    const newPath = path.join(
+      baseDir,
+      `${category}_${timestamp}${ext}`
+    );
+  
     fs.renameSync(originalPath, newPath);
-
-    return newPath;
+  
+    return { newPath, originalPath };
   }
+  
 
   private generateCleanName(
     category: string,

@@ -6,17 +6,24 @@ import { OcrService } from '../ocr/ocr.service';
 import { ClassifierService } from '../classifier/classifier.service';
 import { AiService } from '../ai/ai.service';
 import { OrganizerService } from '../organizer/organizer.service';
+import { HistoryService } from '../history/history.service';
+import { DecisionService } from '../decision/decision.service';
 
 @Injectable()
 export class WatcherService implements OnModuleInit {
   private lastScanTime = Date.now();
   private processing = new Set<string>();
 
+  // 🔥 Toggle this later from UI
+  private readonly DRY_RUN = false;
+
   constructor(
     private readonly ocrService: OcrService,
     private readonly classifierService: ClassifierService,
     private readonly aiService: AiService,
-    private readonly organizerService: OrganizerService
+    private readonly organizerService: OrganizerService,
+    private readonly historyService: HistoryService,
+    private readonly decisionService: DecisionService
   ) {}
 
   onModuleInit() {
@@ -38,7 +45,6 @@ export class WatcherService implements OnModuleInit {
         for (const file of files) {
           const fullPath = path.join(folder, file);
 
-          // Skip already processing files
           if (this.processing.has(fullPath)) continue;
 
           const stats = await fs.stat(fullPath);
@@ -48,9 +54,7 @@ export class WatcherService implements OnModuleInit {
             this.isScreenshot(file)
           ) {
             this.processing.add(fullPath);
-
             await this.handleScreenshot(fullPath);
-
             this.processing.delete(fullPath);
           }
         }
@@ -87,12 +91,41 @@ export class WatcherService implements OnModuleInit {
 
       console.log('🤖 AI category:', aiCategory);
 
-      // 4️⃣ Move & rename
-      const newPath = this.organizerService.organize(
-        fullPath,
-        aiCategory,
-        extractedText
+      // 4️⃣ Hybrid decision
+      const decision =
+        this.decisionService.decide(
+          ruleCategory,
+          aiCategory
+        );
+
+      console.log(
+        `🧠 Final decision: ${decision.category} (${Math.round(
+          decision.confidence * 100
+        )}%) via ${decision.source}`
       );
+
+      // 🧪 Dry run mode (no file move)
+      if (this.DRY_RUN) {
+        console.log(
+          `🧪 DRY RUN → Would move screenshot to "${decision.category}"`
+        );
+        return;
+      }
+
+      // 5️⃣ Organize (move + rename)
+      const { newPath, originalPath } =
+        this.organizerService.organize(
+          fullPath,
+          decision.category
+        );
+
+      // 6️⃣ Save history
+      this.historyService.save({
+        originalPath,
+        newPath,
+        category: decision.category,
+        timestamp: Date.now(),
+      });
 
       console.log('📁 Saved to:', newPath);
     } catch (error) {
