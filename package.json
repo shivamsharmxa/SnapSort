@@ -1,0 +1,22 @@
+{
+  "name": "snapsort",
+  "private": true,
+  "scripts": {
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivamsharmxa/SnapSort.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shivamsharmxa/SnapSort/issues"
+  },
+  "homepage": "https://github.com/shivamsharmxa/SnapSort#readme",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6"
+  }
+}

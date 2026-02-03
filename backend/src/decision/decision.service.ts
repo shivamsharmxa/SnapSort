@@ -1,9 +1,12 @@
+import { Injectable } from '@nestjs/common';
+
 export interface DecisionResult {
     category: string;
     confidence: number;
     source: 'rule' | 'ai' | 'hybrid';
   }
   
+  @Injectable()
   export class DecisionService {
     decide(
       ruleCategory: string,

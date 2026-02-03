@@ -8,6 +8,7 @@ import { AiModule } from './ai/ai.module';
 import { OrganizerModule } from './organizer/organizer.module';
 import { HistoryModule } from './history/history.module';
 import { DecisionModule } from './decision/decision.module';
+import { ConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DecisionModule } from './decision/decision.module';
     OrganizerModule,
     HistoryModule,
     DecisionModule,
+    ConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],

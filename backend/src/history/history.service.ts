@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -9,6 +10,7 @@ export interface HistoryEntry {
   timestamp: number;
 }
 
+@Injectable()
 export class HistoryService {
   private historyFile = path.join(
     os.homedir(),

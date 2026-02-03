@@ -8,6 +8,7 @@ import { AiService } from '../ai/ai.service';
 import { OrganizerService } from '../organizer/organizer.service';
 import { HistoryService } from '../history/history.service';
 import { DecisionService } from '../decision/decision.service';
+import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class WatcherService implements OnModuleInit {
@@ -23,7 +24,8 @@ export class WatcherService implements OnModuleInit {
     private readonly aiService: AiService,
     private readonly organizerService: OrganizerService,
     private readonly historyService: HistoryService,
-    private readonly decisionService: DecisionService
+    private readonly decisionService: DecisionService,
+    private readonly configService: ConfigService
   ) {}
 
   onModuleInit() {
@@ -105,7 +107,7 @@ export class WatcherService implements OnModuleInit {
       );
 
       // 🧪 Dry run mode (no file move)
-      if (this.DRY_RUN) {
+      if (this.configService.isDryRun()) {
         console.log(
           `🧪 DRY RUN → Would move screenshot to "${decision.category}"`
         );
