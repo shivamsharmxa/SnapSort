@@ -41,6 +41,11 @@ export class WatcherService implements OnModuleInit {
     console.log('👀 Polling folder:', folder);
 
     setInterval(async () => {
+      // Skip polling if monitoring is disabled
+      if (!this.configService.isMonitoring()) {
+        return;
+      }
+
       try {
         const files = await fs.readdir(folder);
 
@@ -116,9 +121,10 @@ export class WatcherService implements OnModuleInit {
 
       // 5️⃣ Organize (move + rename)
       const { newPath, originalPath } =
-        this.organizerService.organize(
+        await this.organizerService.organize(
           fullPath,
-          decision.category
+          decision.category,
+          extractedText
         );
 
       // 6️⃣ Save history

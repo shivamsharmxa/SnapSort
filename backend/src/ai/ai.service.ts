@@ -14,7 +14,7 @@ Classify the given text into ONLY ONE of the following categories:
 - chat
 - ui
 - document
-- unknown
+- other
 
 Rules:
 1. Output ONLY the category name.
@@ -22,7 +22,7 @@ Rules:
 3. Do NOT include quotes.
 4. Do NOT include punctuation.
 5. Do NOT include extra words.
-6. If unsure, return "unknown".
+6. If unsure, return "other".
 
 Examples:
 Text: "TypeError: Cannot read property map"

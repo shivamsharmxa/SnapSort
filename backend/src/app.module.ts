@@ -9,6 +9,7 @@ import { OrganizerModule } from './organizer/organizer.module';
 import { HistoryModule } from './history/history.module';
 import { DecisionModule } from './decision/decision.module';
 import { ConfigModule } from './config/config.module';
+import { ScreenshotsModule } from './screenshots/screenshots.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ConfigModule } from './config/config.module';
     HistoryModule,
     DecisionModule,
     ConfigModule,
+    ScreenshotsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -20,7 +20,7 @@ export interface DecisionResult {
         };
       }
   
-      if (aiCategory !== 'unknown') {
+      if (aiCategory !== 'other') {
         return {
           category: aiCategory,
           confidence: 0.75,

@@ -2,7 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: ui-sans-serif, system-ui, -apple-system;
-  background-color: #f9fafb;
+@layer base {
+  body {
+    @apply bg-[#0f172a] text-[#f1f5f9] antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-[#1e293b]/80 backdrop-blur-md;
+  }
+  
+  .border-slate {
+    @apply border border-[#334155];
+  }
+  
+  .recessed {
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .breathing-glow {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
 }

@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { FilenameService } from '../ai/filename.service';
 
 @Injectable()
 export class OrganizerService {
+  constructor(private readonly filenameService: FilenameService) {}
   private baseDir = path.join(os.homedir(), 'Desktop', 'Screenshots');
 
   private categoryMap: Record<string, string> = {
@@ -13,24 +15,25 @@ export class OrganizerService {
     chat: 'Chat',
     ui: 'UI',
     document: 'Documents',
-    unknown: 'Others',
+    other: 'Other',
   };
 
-  organize(
+  async organize(
     originalPath: string,
-    category: string
-  ): { newPath: string; originalPath: string } {
+    category: string,
+    extractedText: string = ''
+  ): Promise<{ newPath: string; originalPath: string }> {
     const folderMap: Record<string, string> = {
       code: 'Code',
       error: 'Errors',
       chat: 'Chat',
       ui: 'UI',
       document: 'Documents',
-      unknown: 'Others',
+      other: 'Other',
     };
 
     const folder =
-      folderMap[category] || 'Others';
+      folderMap[category] || 'Other';
 
     const baseDir = path.join(
       os.homedir(),
@@ -43,16 +46,20 @@ export class OrganizerService {
       fs.mkdirSync(baseDir, { recursive: true });
     }
 
-    const timestamp = new Date()
-      .toISOString()
-      .slice(0, 19)
-      .replace(/:/g, '-');
+    // Generate smart filename using AI + rules
+    const baseFilename = await this.filenameService.generateFilename(
+      extractedText,
+      category,
+    );
+
+    // Add short timestamp for uniqueness
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
 
     const ext = path.extname(originalPath);
-    const newPath = path.join(
-      baseDir,
-      `${category}_${timestamp}${ext}`
-    );
+    const filename = `${baseFilename}_${timeStr}${ext}`;
+
+    const newPath = path.join(baseDir, filename);
 
     fs.renameSync(originalPath, newPath);
 
