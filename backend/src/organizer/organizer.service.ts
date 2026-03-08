@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { FilenameService } from '../ai/filename.service';
@@ -42,8 +43,8 @@ export class OrganizerService {
       folder
     );
 
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
+    if (!existsSync(baseDir)) {
+      await fs.mkdir(baseDir, { recursive: true });
     }
 
     // Generate smart filename using AI + rules
@@ -61,29 +62,9 @@ export class OrganizerService {
 
     const newPath = path.join(baseDir, filename);
 
-    fs.renameSync(originalPath, newPath);
+    await fs.rename(originalPath, newPath);
 
     return { newPath, originalPath };
   }
-
-
-  private generateCleanName(
-    category: string,
-    text: string
-  ): string {
-    const words = text
-      .replace(/[^a-zA-Z0-9 ]/g, '')
-      .split(' ')
-      .slice(0, 5)
-      .join('_')
-      .toLowerCase();
-
-    const date = new Date()
-      .toISOString()
-      .slice(0, 16)
-      .replace('T', '_')
-      .replace(':', '-');
-
-    return `${category}_${words || 'screenshot'}_${date}`;
-  }
 }
+

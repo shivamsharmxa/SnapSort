@@ -13,10 +13,6 @@ import { ConfigService } from '../config/config.service';
 @Injectable()
 export class WatcherService implements OnModuleInit {
   private lastScanTime = Date.now();
-  private processing = new Set<string>();
-
-  // 🔥 Toggle this later from UI
-  private readonly DRY_RUN = false;
 
   constructor(
     private readonly ocrService: OcrService,
@@ -37,43 +33,45 @@ export class WatcherService implements OnModuleInit {
     return path.join(os.homedir(), 'Desktop');
   }
 
+  private timeoutId?: NodeJS.Timeout;
+  
+  private async pollFolder(folder: string) {
+    if (!this.configService.isMonitoring()) {
+      // Still need to poll to check if monitoring was re-enabled
+      this.timeoutId = setTimeout(() => this.pollFolder(folder), 1000);
+      return;
+    }
+
+    try {
+      const currentScanTime = Date.now();
+      const files = await fs.readdir(folder);
+
+      for (const file of files) {
+        const fullPath = path.join(folder, file);
+        const stats = await fs.stat(fullPath);
+
+        if (
+          stats.birthtimeMs > this.lastScanTime &&
+          this.isScreenshot(file)
+        ) {
+          await this.handleScreenshot(fullPath);
+        }
+      }
+
+      this.lastScanTime = currentScanTime;
+    } catch (error) {
+      console.error(
+        '❌ Watcher error:',
+        error instanceof Error ? error.message : error
+      );
+    }
+
+    this.timeoutId = setTimeout(() => this.pollFolder(folder), 1000);
+  }
+
   private startPolling(folder: string) {
     console.log('👀 Polling folder:', folder);
-
-    setInterval(async () => {
-      // Skip polling if monitoring is disabled
-      if (!this.configService.isMonitoring()) {
-        return;
-      }
-
-      try {
-        const files = await fs.readdir(folder);
-
-        for (const file of files) {
-          const fullPath = path.join(folder, file);
-
-          if (this.processing.has(fullPath)) continue;
-
-          const stats = await fs.stat(fullPath);
-
-          if (
-            stats.birthtimeMs > this.lastScanTime &&
-            this.isScreenshot(file)
-          ) {
-            this.processing.add(fullPath);
-            await this.handleScreenshot(fullPath);
-            this.processing.delete(fullPath);
-          }
-        }
-
-        this.lastScanTime = Date.now();
-      } catch (error) {
-        console.error(
-          '❌ Watcher error:',
-          error instanceof Error ? error.message : error
-        );
-      }
-    }, 1000);
+    this.pollFolder(folder);
   }
 
   private async handleScreenshot(fullPath: string) {
