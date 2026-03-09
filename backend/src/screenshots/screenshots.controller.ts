@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, Res, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,6 +14,15 @@ export class ScreenshotsController {
     try {
       // Decode the filename (in case it has special characters)
       const decodedFilename = decodeURIComponent(filename);
+      
+      // Prevent Path Traversal attacks
+      if (
+        decodedFilename.includes('/') || 
+        decodedFilename.includes('\\') || 
+        decodedFilename.includes('..')
+      ) {
+        throw new BadRequestException('Invalid filename');
+      }
       
       // Search for the file in all category folders
       const baseDir = path.join(process.env.HOME || '', 'Desktop', 'Screenshots');

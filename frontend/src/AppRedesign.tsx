@@ -3,7 +3,7 @@
  * Import this instead of App.tsx to use the redesigned interface
  */
 
-import AppLayout from './components/redesign/AppLayout';
+import AppLayout from './components/AppLayout';
 import './index.css';
 
 export default function AppRedesign() {

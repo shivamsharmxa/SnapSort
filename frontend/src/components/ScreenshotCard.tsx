@@ -1,119 +1,118 @@
-import { motion } from 'framer-motion';
-import { Clock, Tag, FileImage } from 'lucide-react';
+/**
+ * ScreenshotCard - Finder-style file card
+ * Clean, minimal, with soft hover effect
+ */
+
+import { FileImage, Clock, Tag } from 'lucide-react';
+import { useState } from 'react';
 
 interface Screenshot {
-    id: string;
-    fileName: string;
-    category: string;
-    timestamp: number;
-    originalPath: string;
-    newPath: string;
+  id: string;
+  fileName: string;
+  category: string;
+  timestamp: number;
+  originalPath: string;
+  newPath: string;
 }
 
 interface ScreenshotCardProps {
-    screenshot: Screenshot;
+  screenshot: Screenshot;
 }
 
 export default function ScreenshotCard({ screenshot }: ScreenshotCardProps) {
-    const formatTime = (timestamp: number) => {
-        const diff = Date.now() - timestamp;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
+  const [isHovered, setIsHovered] = useState(false);
 
-        if (days > 0) return `${days}d ago`;
-        if (hours > 0) return `${hours}h ago`;
-        if (minutes > 0) return `${minutes}m ago`;
-        return 'Just now';
-    };
+  const formatTime = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'Just now';
+  };
 
-    const categoryColors: Record<string, string> = {
-        code: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        error: 'bg-red-500/20 text-red-400 border-red-500/30',
-        chat: 'bg-green-500/20 text-green-400 border-green-500/30',
-        ui: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-        document: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-        other: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-    };
+  const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
+    code: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    error: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    chat: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+    ui: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+    document: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+    other: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
+  };
 
-    return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="relative group"
+  const colors = categoryColors[screenshot.category] || categoryColors.other;
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`
+        bg-white border border-[#E8E8E8] rounded-lg overflow-hidden
+        transition-all duration-150 ease-in-out cursor-pointer
+        ${isHovered ? 'shadow-[0_2px_8px_rgba(0,0,0,0.12)] border-[#D0D0D0]' : 'shadow-[0_1px_3px_rgba(0,0,0,0.08)]'}
+      `}
+    >
+      {/* Thumbnail Area */}
+      <div className="aspect-video bg-[#FAFAFA] flex items-center justify-center border-b border-[#E8E8E8] relative group overflow-hidden">
+        {/* Actual Screenshot Image */}
+        <img
+          src={`http://localhost:3000/screenshots/image/${encodeURIComponent(screenshot.fileName)}`}
+          alt={screenshot.fileName}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            e.currentTarget.style.display = 'none';
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+            if (fallback) fallback.classList.remove('hidden');
+          }}
+        />
+        
+        {/* Fallback Icon (hidden by default, shown on image error) */}
+        <div className="hidden absolute inset-0 flex items-center justify-center bg-[#FAFAFA]">
+          <FileImage className="w-12 h-12 text-[#D0D0D0]" strokeWidth={1.5} />
+        </div>
+        
+        {/* Hover Overlay - Show File Path */}
+        {isHovered && (
+          <div className="absolute inset-0 bg-white/95 p-3 flex flex-col justify-center text-[11px] leading-relaxed">
+            <p className="font-medium text-[#1F1F1F] mb-1">File Path:</p>
+            <p className="text-[#6B6B6B] break-all line-clamp-3">
+              {screenshot.newPath}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Card Content */}
+      <div className="p-3 space-y-2">
+        {/* Filename */}
+        <h3 
+          className="text-[13px] font-medium text-[#1F1F1F] truncate" 
+          title={screenshot.fileName}
         >
-            <div className="bg-[#1e293b] border-slate rounded-lg overflow-hidden recessed">
-                {/* Screenshot Preview Placeholder */}
-                <div className="aspect-video bg-[#0f172a] relative overflow-hidden flex items-center justify-center">
-                    <div className="text-center">
-                        <FileImage className="w-12 h-12 text-[#334155] mx-auto mb-2" />
-                        <p className="text-xs text-[#475569]">
-                            {screenshot.fileName.split('_')[0]}
-                        </p>
-                    </div>
-                    
-                    {/* Hover overlay with file path */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute inset-0 bg-[#0f172a]/95 backdrop-blur-sm p-4 flex flex-col justify-center"
-                    >
-                        <div className="space-y-2">
-                            <div>
-                                <p className="text-xs font-medium text-[#10b981] mb-1">Original Path:</p>
-                                <p className="text-xs text-[#64748b] font-mono break-all">
-                                    {screenshot.originalPath}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-[#10b981] mb-1">Moved To:</p>
-                                <p className="text-xs text-[#64748b] font-mono break-all">
-                                    {screenshot.newPath}
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
+          {screenshot.fileName}
+        </h3>
 
-                {/* Card Footer */}
-                <div className="p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-[#f1f5f9] truncate" title={screenshot.fileName}>
-                            {screenshot.fileName}
-                        </span>
-                    </div>
+        {/* Metadata Row */}
+        <div className="flex items-center justify-between text-[11px]">
+          {/* Time */}
+          <div className="flex items-center gap-1 text-[#9B9B9B]">
+            <Clock className="w-3 h-3" strokeWidth={2} />
+            <span>{formatTime(screenshot.timestamp)}</span>
+          </div>
 
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]" title={formatDate(screenshot.timestamp)}>
-                            <Clock className="w-3 h-3" />
-                            <span>{formatTime(screenshot.timestamp)}</span>
-                        </div>
-
-                        <div
-                            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs ${
-                                categoryColors[screenshot.category] || categoryColors.other
-                            }`}
-                        >
-                            <Tag className="w-3 h-3" />
-                            <span className="capitalize">{screenshot.category}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </motion.div>
-    );
+          {/* Category Badge */}
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded ${colors.bg} ${colors.border} border`}>
+            <Tag className={`w-3 h-3 ${colors.text}`} strokeWidth={2} />
+            <span className={`font-medium ${colors.text} capitalize`}>
+              {screenshot.category}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -8,7 +8,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import ScreenshotGrid from './ScreenshotGrid';
 import SettingsModal from './SettingsModal';
-import { useSnapSort } from '../../hooks/useSnapSort';
+import { useSnapSort } from '../hooks/useSnapSort';
 
 export default function AppLayout() {
   const [activeCategory, setActiveCategory] = useState('all');
